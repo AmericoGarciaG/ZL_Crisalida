@@ -185,7 +185,7 @@ class ReplicationPipeline:
         
         try:
             # Importar y ejecutar
-            from hybrid_feature_engineering_optimized import main as hybrid_main
+            from hybrid_feature_engineering import main as hybrid_main
             hybrid_main()
             
             # Validar resultados
@@ -307,7 +307,7 @@ class ReplicationPipeline:
         
         try:
             # Importar y ejecutar
-            from comprehensive_evaluation_fixed import main as eval_main
+            from comprehensive_evaluation import main as eval_main
             eval_main()
             
             # Validar resultados

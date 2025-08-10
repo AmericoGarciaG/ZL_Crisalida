@@ -1,8 +1,8 @@
 # Proyecto Crisálida: Transformer-Omega
 ## Estado del Arte en Discriminación de Combinaciones Ganadoras
 
-[![Estado](https://img.shields.io/badge/Estado-Completado-brightgreen)](https://github.com/manus-ai/crisalida)
-[![AUC Score](https://img.shields.io/badge/AUC-0.999953-red)](https://github.com/manus-ai/crisalida)
+[![Estado](https://img.shields.io/badge/Estado-Completado-brightgreen)](https://github.com/crisalida)
+[![AUC Score](https://img.shields.io/badge/AUC-0.999953-red)](https://github.com/crisalida)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)](https://python.org)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15+-orange)](https://tensorflow.org)
 [![Licencia](https://img.shields.io/badge/Licencia-Académica-yellow)](LICENSE)
