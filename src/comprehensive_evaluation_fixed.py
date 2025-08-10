@@ -19,22 +19,11 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Any
 import os
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+import config
+import utils
+from utils import convert_numpy_types # Importar la función específica
 
-def convert_numpy_types(obj):
-    """Convierte tipos numpy a tipos nativos de Python para serialización JSON"""
-    if isinstance(obj, np.integer):
-        return int(obj)
-    elif isinstance(obj, np.floating):
-        return float(obj)
-    elif isinstance(obj, np.ndarray):
-        return obj.tolist()
-    elif isinstance(obj, dict):
-        return {key: convert_numpy_types(value) for key, value in obj.items()}
-    elif isinstance(obj, list):
-        return [convert_numpy_types(item) for item in obj]
-    else:
-        return obj
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class ComprehensiveEvaluator:
     """Evaluador comprehensivo del Transformer-Omega"""
@@ -48,18 +37,18 @@ class ComprehensiveEvaluator:
         logging.info("Cargando datos para evaluación comprehensiva...")
         
         # Datos híbridos
-        self.features = np.load('../data/hybrid_features.npy')
-        self.labels = np.load('../data/hybrid_labels.npy')
+        self.features = np.load(config.HYBRID_FEATURES_PATH)
+        self.labels = np.load(config.HYBRID_LABELS_PATH)
         
-        with open('../data/hybrid_metadata.json', 'r') as f:
+        with open(config.HYBRID_METADATA_PATH, 'r') as f:
             self.metadata = json.load(f)
         
         # Resultados del Transformer-Omega
-        with open('../results/transformer_omega_results.json', 'r') as f:
+        with open(config.OMEGA_RESULTS_PATH, 'r') as f:
             self.omega_results = json.load(f)
         
         # Predicciones del Transformer-Omega
-        self.omega_predictions = np.load('../results/transformer_omega_predictions.npy')
+        self.omega_predictions = np.load(config.OMEGA_PREDICTIONS_PATH)
         
         # Datos de test (recrear la división)
         from sklearn.model_selection import train_test_split
@@ -294,7 +283,7 @@ Arquitectura: Dual-Encoder
                    bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
         
         plt.tight_layout()
-        plt.savefig('../results/comprehensive_evaluation.png', dpi=300, bbox_inches='tight')
+        plt.savefig(config.COMPREHENSIVE_EVALUATION_PNG_PATH, dpi=300, bbox_inches='tight')
         plt.close()
         
         logging.info("Visualizaciones guardadas en ../results/comprehensive_evaluation.png")
@@ -353,13 +342,13 @@ Arquitectura: Dual-Encoder
         comprehensive_report = convert_numpy_types(comprehensive_report)
         
         # Guardar reporte
-        with open('../results/comprehensive_evaluation_report.json', 'w') as f:
+        with open(config.COMPREHENSIVE_EVALUATION_REPORT_PATH, 'w') as f:
             json.dump(comprehensive_report, f, indent=2)
         
         # Generar reporte markdown
         markdown_report = self.create_markdown_report(comprehensive_report)
         
-        with open('../reports/fase5_comprehensive_evaluation.md', 'w') as f:
+        with open(config.COMPREHENSIVE_EVALUATION_MD_PATH, 'w') as f:
             f.write(markdown_report)
         
         logging.info("Reporte comprehensivo generado exitosamente")
@@ -499,6 +488,7 @@ El **Proyecto Crisálida** ha culminado exitosamente con el **Transformer-Omega*
         return report
 
 def main():
+    utils.ensure_dirs_exist()
     """Función principal de la Fase 5"""
     logging.info("=== PROYECTO CRISÁLIDA - FASE 5: EVALUACIÓN COMPREHENSIVA ===")
     

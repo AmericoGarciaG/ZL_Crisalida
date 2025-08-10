@@ -13,12 +13,19 @@ from typing import List, Dict, Tuple, Any
 import logging
 from pathlib import Path
 
+import config
+import utils 
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class OptimizedHybridFeatureEngineer:
     """Ingeniero de características híbridas optimizado para el Transformer-Omega"""
     
-    def __init__(self, winners_path: str, noise_path: str, top10_mapping_path: str):
+    def __init__(self, 
+             winners_path=config.WINNERS_DATASET_PATH, 
+             noise_path=config.NOISE_DATASET_PATH, 
+             top10_mapping_path=config.TOP10_MAPPING_PATH):       
+        
         self.winners_path = winners_path
         self.noise_path = noise_path
         self.top10_mapping_path = top10_mapping_path
@@ -56,7 +63,7 @@ class OptimizedHybridFeatureEngineer:
         
         logging.info("Top 10 características contextuales cargadas")
         
-    def calculate_affinity_frequencies(self, levels: List[int] = [2, 3, 4, 5]):
+    def calculate_affinity_frequencies(self, levels: List[int] = config.AFFINITY_LEVELS):
         """Calcula frecuencias de afinidad para todos los niveles (optimizado)"""
         logging.info(f"Calculando frecuencias de afinidad para niveles: {levels}")
         
@@ -158,7 +165,7 @@ class OptimizedHybridFeatureEngineer:
         contextual_features = np.zeros((batch_size, 60))  # 6 números × 10 características
         
         # Números de Fibonacci hasta 39
-        fibonacci_numbers = {1, 1, 2, 3, 5, 8, 13, 21, 34}
+        fibonacci_numbers = config.FIBONACCI_NUMBERS
         
         for i, combination in enumerate(combinations_batch):
             combo_mean = np.mean(combination)
@@ -194,7 +201,7 @@ class OptimizedHybridFeatureEngineer:
                 contextual_features[i, base_idx + 6] = 1.0 if 10 <= number <= 19 else 0.0
                 
                 # 8. Valor normalizado
-                contextual_features[i, base_idx + 7] = (number - 1) / 38.0
+                contextual_features[i, base_idx + 7] = (number - config.NUMBER_RANGE_MIN) / (config.NUMBER_RANGE_MAX - config.NUMBER_RANGE_MIN)
                 
                 # 9. No Fibonacci
                 contextual_features[i, base_idx + 8] = 0.0 if number in fibonacci_numbers else 1.0
@@ -310,8 +317,8 @@ class OptimizedHybridFeatureEngineer:
         logging.info("Guardando dataset híbrido...")
         
         # Guardar características y etiquetas
-        np.save('../data/hybrid_features.npy', self.hybrid_features)
-        np.save('../data/hybrid_labels.npy', self.labels)
+        np.save(config.HYBRID_FEATURES_PATH, self.hybrid_features)
+        np.save(config.HYBRID_LABELS_PATH, self.labels)
         
         # Crear metadatos detallados
         metadata = {
@@ -343,7 +350,7 @@ class OptimizedHybridFeatureEngineer:
             }
         }
         
-        with open('../data/hybrid_metadata.json', 'w') as f:
+        with open(config.HYBRID_METADATA_PATH, 'w') as f:
             json.dump(metadata, f, indent=2)
         
         logging.info("Dataset híbrido guardado exitosamente")
@@ -360,6 +367,8 @@ class OptimizedHybridFeatureEngineer:
         report = f"""# Proyecto Crisálida - Fase 2: Ingeniería de Características Híbrida (COMPLETADA)
 
 ## Resumen Ejecutivo
+
+
 
 Se ha completado exitosamente la fusión del Top 10 de características contextuales con las métricas de Afinidad Combinatoria, creando un vector de características híbrido de {stats['total_features']} dimensiones para el modelo Transformer-Omega.
 
@@ -448,15 +457,11 @@ El vector híbrido combina exitosamente la potencia discriminativa de las afinid
         return report
 
 def main():
+    utils.ensure_dirs_exist()
     """Función principal de la Fase 2 optimizada"""
-    logging.info("=== PROYECTO CRISÁLIDA - FASE 2: INGENIERÍA HÍBRIDA OPTIMIZADA ===")
-    
-    # Inicializar ingeniero optimizado
-    engineer = OptimizedHybridFeatureEngineer(
-        winners_path='../data/winners_dataset.csv',
-        noise_path='../data/noise_dataset.csv',
-        top10_mapping_path='../results/top10_feature_mapping.json'
-    )
+    logging.info("=== PROYECTO CRISÁLIDA - FASE 2: INGENIERÍA HÍBRIDA OPTIMIZADA ===")   
+
+    engineer = OptimizedHybridFeatureEngineer()
     
     # Cargar datos
     engineer.load_data()

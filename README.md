@@ -250,9 +250,9 @@ Este proyecto está disponible para **investigación académica** con atribució
 ### Cita Recomendada
 
 ```bibtex
-@techreport{manus2025crisalida,
+@techreport{ZL_2025crisalida,
   title={Proyecto Crisálida: Transformer-Omega para Discriminación de Combinaciones Ganadoras},
-  author={Manus AI},
+  author={Equipo Zen Lotto},
   year={2025},
   institution={Proyecto Crisálida},
   type={Reporte Técnico}

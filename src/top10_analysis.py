@@ -12,12 +12,15 @@ import seaborn as sns
 from pathlib import Path
 import logging
 
+import config
+import utils
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class Top10FeatureAnalyzer:
     """Analizador para identificar y preparar el Top 10 de características contextuales"""
     
-    def __init__(self, feature_importance_path: str):
+    def __init__(self, feature_importance_path: str = config.FEATURE_IMPORTANCE_PATH):
         self.feature_importance_path = feature_importance_path
         self.feature_importance = None
         self.top10_features = None
@@ -146,7 +149,7 @@ class Top10FeatureAnalyzer:
         plt.tight_layout()
         
         # Guardar
-        plt.savefig('../results/top10_features_analysis.png', dpi=300, bbox_inches='tight')
+        plt.savefig(config.TOP10_ANALYSIS_PNG_PATH, dpi=300, bbox_inches='tight')
         plt.close()
         
         logging.info("Visualización guardada en ../results/top10_features_analysis.png")
@@ -183,7 +186,7 @@ class Top10FeatureAnalyzer:
                 feature_mapping['implementation_notes'][name] = "Característica estándar - implementar según descripción"
         
         # Guardar mapeo
-        with open('../results/top10_feature_mapping.json', 'w') as f:
+        with open(config.TOP10_MAPPING_PATH, 'w') as f:
             json.dump(feature_mapping, f, indent=2)
         
         logging.info("Mapeo guardado en ../results/top10_feature_mapping.json")
@@ -274,7 +277,7 @@ Se ha completado el análisis de las características contextuales del Context-A
 """
         
         # Guardar reporte
-        with open('../reports/fase1_top10_analysis.md', 'w') as f:
+        with open(config.REPORTS_DIR / 'fase1_top10_analysis.md', 'w') as f:
             f.write(report)
         
         logging.info("Reporte guardado en ../reports/fase1_top10_analysis.md")
@@ -282,11 +285,12 @@ Se ha completado el análisis de las características contextuales del Context-A
         return report
 
 def main():
+    utils.ensure_dirs_exist()
     """Función principal de la Fase 1"""
     logging.info("=== PROYECTO CRISÁLIDA - FASE 1: ANÁLISIS TOP 10 ===")
     
     # Inicializar analizador
-    analyzer = Top10FeatureAnalyzer('../data/feature_importance_report.json')
+    analyzer = Top10FeatureAnalyzer()
     
     # Cargar datos
     analyzer.load_feature_importance()

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import json
 import tensorflow as tf
-from tensorflow import keras
+from tensorflow import keras, metrics
 from tensorflow.keras import layers
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Any
 import os
 
+import config
+
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class TransformerOmegaSimple:
@@ -26,21 +29,21 @@ class TransformerOmegaSimple:
     Transformer-Omega Simplificado: Arquitectura híbrida funcional
     """
     
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
+    def __init__(self, model_config: Dict[str, Any] = config.MODEL_CONFIG):
+        self.config = model_config
         self.model = None
         self.scaler_affinity = None
-        self.scaler_contextual = None
+        self.scaler_contextual = None   
         self.history = None
         
         # Configuración de arquitectura
-        self.affinity_dim = config.get('affinity_dim', 14)
-        self.contextual_dim = config.get('contextual_dim', 60)
-        self.d_model = config.get('d_model', 128)
-        self.num_heads = config.get('num_heads', 8)
-        self.num_layers = config.get('num_layers', 3)
-        self.ff_dim = config.get('ff_dim', 256)
-        self.dropout_rate = config.get('dropout_rate', 0.1)
+        self.affinity_dim = self.config['affinity_dim']
+        self.contextual_dim = self.config['contextual_dim']
+        self.d_model = self.config['d_model']
+        self.num_heads = self.config['num_heads']
+        self.num_layers = self.config['num_layers']
+        self.ff_dim = self.config['ff_dim']
+        self.dropout_rate = self.config['dropout_rate']
         
     def build_model(self) -> keras.Model:
         """Construye la arquitectura simplificada del Transformer-Omega"""
@@ -152,15 +155,15 @@ class TransformerOmegaSimple:
         
         return model
     
-    def prepare_data(self, features_path: str, labels_path: str, metadata_path: str) -> Tuple[Any, Any, Any, Any]:
+    def prepare_data(self) -> Tuple[Any, Any, Any, Any]:
         """Prepara los datos para entrenamiento"""
         logging.info("Preparando datos para Transformer-Omega...")
         
         # Cargar datos
-        features = np.load(features_path)
-        labels = np.load(labels_path)
+        features = np.load(config.HYBRID_FEATURES_PATH)
+        labels = np.load(config.HYBRID_LABELS_PATH)
         
-        with open(metadata_path, 'r') as f:
+        with open(config.HYBRID_METADATA_PATH, 'r') as f:
             metadata = json.load(f)
         
         # Separar características de afinidad y contextuales
@@ -197,23 +200,29 @@ class TransformerOmegaSimple:
         
         return (X_train, y_train), (X_val, y_val), (X_test, y_test), metadata
     
-    def compile_model(self, learning_rate: float = 1e-4):
+    def compile_model(self, learning_rate: float = config.TRAINING_CONFIG['learning_rate']):
         """Compila el modelo"""
         optimizer = keras.optimizers.AdamW(
-            learning_rate=learning_rate,
-            weight_decay=1e-5,
-            clipnorm=1.0
-        )
+        learning_rate=learning_rate,
+        weight_decay=config.TRAINING_CONFIG['weight_decay'],
+        clipnorm=config.TRAINING_CONFIG['clipnorm']
+    )
         
+        model_metrics = [
+        metrics.BinaryAccuracy(name='accuracy'),
+        metrics.Precision(name='precision'),
+        metrics.Recall(name='recall')
+    ]
+                
         self.model.compile(
             optimizer=optimizer,
             loss='binary_crossentropy',
-            metrics=['accuracy', 'precision', 'recall']
+            metrics=model_metrics
         )
         
         logging.info(f"Modelo compilado con learning_rate={learning_rate}")
     
-    def train_model(self, train_data: Tuple, val_data: Tuple, epochs: int = 50) -> keras.callbacks.History:
+    def train_model(self, train_data: Tuple, val_data: Tuple, epochs: int = config.TRAINING_CONFIG['epochs']) -> keras.callbacks.History:
         """Entrena el modelo"""
         logging.info(f"Iniciando entrenamiento por {epochs} épocas...")
         
@@ -227,19 +236,19 @@ class TransformerOmegaSimple:
         callbacks = [
             keras.callbacks.EarlyStopping(
                 monitor='val_loss',
-                patience=10,
+                patience=config.TRAINING_CONFIG['early_stopping_patience'],
                 restore_best_weights=True,
                 verbose=1
             ),
             keras.callbacks.ReduceLROnPlateau(
                 monitor='val_loss',
                 factor=0.5,
-                patience=5,
+                patience=config.TRAINING_CONFIG['reduce_lr_patience'],
                 min_lr=1e-7,
                 verbose=1
             ),
             keras.callbacks.ModelCheckpoint(
-                '../models/transformer_omega_best.keras',
+                str(config.TRANSFORMER_OMEGA_BEST_PATH),
                 monitor='val_loss',
                 save_best_only=True,
                 verbose=1
@@ -251,7 +260,7 @@ class TransformerOmegaSimple:
             X_train, y_train,
             validation_data=(X_val, y_val),
             epochs=epochs,
-            batch_size=32,
+            batch_size=config.TRAINING_CONFIG['batch_size'],
             callbacks=callbacks,
             verbose=1
         )
@@ -290,11 +299,14 @@ class TransformerOmegaSimple:
         return results, y_pred_proba
 
 def main():
+    # utils.ensure_dirs_exist() # Puedes mantener o quitar esta línea si ya no usas utils
     """Función principal de la Fase 3"""
     logging.info("=== PROYECTO CRISÁLIDA - FASE 3: TRANSFORMER-OMEGA ===")
     
-    # Configuración del modelo
-    config = {
+    # --- CAMBIO 1: Definir la configuración como un diccionario local ---
+    # En lugar de usar el módulo 'config', definimos los parámetros aquí.
+    # Esto evita el error de serialización JSON.
+    model_config = {
         'affinity_dim': 14,
         'contextual_dim': 60,
         'd_model': 128,
@@ -304,15 +316,22 @@ def main():
         'dropout_rate': 0.1
     }
     
-    # Inicializar Transformer-Omega
-    omega = TransformerOmegaSimple(config)
+    training_config = {
+        'learning_rate': 1e-4,
+        'weight_decay': 1e-5,
+        'clipnorm': 1.0,
+        'epochs': 50,
+        'early_stopping_patience': 15,
+        'reduce_lr_patience': 8,
+        'batch_size': 32
+    }
+
+    # --- CAMBIO 2: Pasar el diccionario a la clase ---
+    # Inicializar Transformer-Omega con el diccionario de configuración
+    omega = TransformerOmegaSimple(model_config=model_config)
     
     # Preparar datos
-    train_data, val_data, test_data, metadata = omega.prepare_data(
-        '../data/hybrid_features.npy',
-        '../data/hybrid_labels.npy',
-        '../data/hybrid_metadata.json'
-    )
+    train_data, val_data, test_data, metadata = omega.prepare_data()
     
     # Construir modelo
     omega.model = omega.build_model()
@@ -321,23 +340,32 @@ def main():
     omega.model.summary()
     
     # Compilar modelo
-    omega.compile_model(learning_rate=1e-4)
+    omega.compile_model(learning_rate=training_config['learning_rate'])
     
     # Entrenar modelo
-    history = omega.train_model(train_data, val_data, epochs=50)
+    history = omega.train_model(train_data, val_data, epochs=training_config['epochs'])
     
     # Evaluar modelo
     results, predictions = omega.evaluate_model(test_data)
     
-    # Guardar modelo
-    omega.model.save('../models/transformer_omega_final.keras')
-    
-    # Crear directorio de resultados
+    # --- CAMBIO 3: Definir las rutas de guardado directamente ---
+    # Ya que no usamos el módulo 'config', especificamos las rutas aquí.
+    os.makedirs('../models', exist_ok=True)
     os.makedirs('../results', exist_ok=True)
+    final_model_path = '../models/transformer_omega_simple_final.keras'
+    results_path = '../results/transformer_omega_simple_results.json'
+    predictions_path = '../results/transformer_omega_simple_predictions.npy'
+
+    # Guardar modelo
+    omega.model.save(final_model_path)
+    logging.info(f"Modelo final guardado en {final_model_path}")
     
     # Guardar resultados
     results_data = {
-        'config': config,
+        # --- ¡LA CORRECCIÓN CLAVE! ---
+        # Ahora 'model_config' es un diccionario, no un módulo.
+        'config': model_config, 
+        'training_config': training_config,
         'results': results,
         'training_history': {
             'loss': [float(x) for x in history.history['loss']],
@@ -347,11 +375,13 @@ def main():
         }
     }
     
-    with open('../results/transformer_omega_results.json', 'w') as f:
+    with open(results_path, 'w') as f:
         json.dump(results_data, f, indent=2)
+    logging.info(f"Resultados guardados en {results_path}")
     
     # Guardar predicciones
-    np.save('../results/transformer_omega_predictions.npy', predictions)
+    np.save(predictions_path, predictions)
+    logging.info(f"Predicciones guardadas en {predictions_path}")
     
     logging.info("=== FASE 3 COMPLETADA EXITOSAMENTE ===")
     logging.info(f"AUC Score: {results['auc']:.4f}")
