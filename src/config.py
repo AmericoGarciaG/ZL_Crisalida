@@ -1,5 +1,6 @@
 # src/config.py
 
+import os
 from pathlib import Path
 
 """
@@ -83,3 +84,32 @@ AFFINITY_LEVELS = [2, 3, 4, 5]
 FIBONACCI_NUMBERS = {1, 2, 3, 5, 8, 13, 21, 34} # Hasta 39
 NUMBER_RANGE_MIN = 1
 NUMBER_RANGE_MAX = 39
+
+# -----------------------------------------------------------------------------
+# 5. CONFIGURACIÓN DEL FALSIFICADOR MAESTRO (MASTER FORGER) - ULTIMATE
+# -----------------------------------------------------------------------------
+import os
+
+FORGER_CONFIG = {
+    # --- Parámetros de Población y Duración ---
+    'population_size': 200,      # Tamaño de la población en cada generación
+    'generations': 200,          # Máximo de generaciones por cada ciclo/reinicio
+    'num_restarts': 5,           # Número de ciclos de evolución a ejecutar
+    
+    # --- Parámetros de Selección y Elitismo ---
+    'elite_size': 20,            # Número de los mejores individuos que pasan al siguiente ciclo (10%)
+    'tournament_size': 5,        # Número de individuos que compiten en la selección por torneo
+
+    # --- Parámetros de Mutación ---
+    'mutation_rate': 0.15,       # Tasa de mutación base
+    'high_mutation_rate': 0.50,  # Tasa de mutación cuando la diversidad es baja
+    'diversity_threshold': 0.18, # Umbral de diversidad Hamming para activar la mutación alta
+    
+    # --- Parámetros de Estrategia de Reinicio ---
+    'stagnation_limit': 2,       # Número de ciclos sin mejora antes de activar el reinicio forzado
+    'hypermutation_rate': 0.80,  # Tasa de mutación ultra alta para el reinicio por estancamiento
+
+    # --- Parámetros Técnicos ---
+    'early_stopping_threshold': 0.98, # Si un score supera esto, la búsqueda se detiene
+    'num_workers': os.cpu_count() or 4 # Usar todos los cores, o 4 como fallback
+}
